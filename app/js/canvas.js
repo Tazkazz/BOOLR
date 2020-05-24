@@ -49,7 +49,7 @@ let framerate = 60, lastFrame = new Date;
 function draw() {
     // Clear the screen
     // ctx.clearRect(0, 0, c.width, c.height);
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = "#aaa";
     ctx.fillRect(0,0,c.width,c.height);
 
     // Draw grid points
