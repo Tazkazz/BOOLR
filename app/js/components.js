@@ -2377,6 +2377,53 @@ class Counter extends Component {
     }
 }
 
+class BinCounter extends Component {
+    constructor(name,pos) {
+        super(name,pos,4,2,{ type: 'icon', text: 'exposure_plus_1' });
+
+        this.addInputPort({ side: 1, pos: 0 }, 'Count');
+        this.addInputPort({ side: 1, pos: 1 }, 'Load');
+        this.addInputPort({ side: 3, pos: 0 }, 'Reset');
+        this.addInputPort({ side: 3, pos: 1 }, 'Clock');
+
+        this.addInputPort({ side: 2, pos: 0 }, 'Input 3');
+        this.addInputPort({ side: 2, pos: 1 }, 'Input 2');
+        this.addInputPort({ side: 2, pos: 2 }, 'Input 1');
+        this.addInputPort({ side: 2, pos: 3 }, 'Input 0');
+
+        this.addOutputPort({ side: 0, pos: 0 }, 'Output 3');
+        this.addOutputPort({ side: 0, pos: 1 }, 'Output 2');
+        this.addOutputPort({ side: 0, pos: 2 }, 'Output 1');
+        this.addOutputPort({ side: 0, pos: 3 }, 'Output 0');
+
+        this.value = 0;
+    }
+
+    function() {
+        const count = !!this.input[0].value
+        const load = !!this.input[1].value
+        const reset = !!this.input[2].value
+        const clock = !!this.input[3].value
+
+        if (reset) {
+            this.value = 0;
+        } else if (clock && load) {
+            let number = 0;
+            for (let i = 4; i <= 7; i ++) {
+                number = (number << 1) + this.input[i].value;
+            }
+            this.value = number;
+        } else if (clock && count) {
+            this.value = (this.value + 1) % 16;
+        }
+
+        this.output[0].value = (this.value >> 3) % 2;
+        this.output[1].value = (this.value >> 2) % 2;
+        this.output[2].value = (this.value >> 1) % 2;
+        this.output[3].value = this.value % 2;
+    }
+}
+
 class LED extends Component {
     constructor(name,pos,color = [100,0,0]) {
         super(name,pos,1,1,{ type: "value" });

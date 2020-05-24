@@ -98,7 +98,8 @@ const constructors = {
     Button,Constant,Delay,Clock,Debug,
     Beep,Counter,LED,Display,
     Custom, TimerStart, TimerEnd,
-    ROM, BypassLED, Display8Bit
+    ROM, BypassLED, Display8Bit,
+    BinCounter
 };
 
 /*
