@@ -147,7 +147,7 @@ createContextMenuOption(
 createContextMenuOption(
     "Edit color",
     "color_lens",
-    "E",
+    "C",
     function() {
         const el = findComponentByPos(...contextMenu.getPos()) || findWireByPos(...contextMenu.getPos());
         dialog.colorPicker(
@@ -164,7 +164,7 @@ createContextMenuOption(
 createContextMenuOption(
     "Edit color",
     "color_lens",
-    "E",
+    "C",
     function() {
         const components = selecting.components;
         const wires = findWiresInSelection();

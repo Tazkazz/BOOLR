@@ -81,7 +81,7 @@ contextOptions["edit name"].onclick = () => {
 
 // Edit wire color
 contextOptions["edit color"] = document.createElement("li");
-contextOptions["edit color"].innerHTML = '<i class="material-icons">color_lens</i><span>Edit color (E)</span>';
+contextOptions["edit color"].innerHTML = '<i class="material-icons">color_lens</i><span>Edit color (C)</span>';
 contextOptions["edit color"].onclick = () => {
     const component = findComponentByPos(Math.round(contextMenu.pos.x),Math.round(contextMenu.pos.y));
     if(component && component.color_off) {

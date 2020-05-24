@@ -75,6 +75,13 @@ c.onkeydown = function(e) {
         case 58: // 0
             break;
         case 67: // C
+            if (!e.ctrlKey && !e.shiftKey) {
+                var found;
+                if(found = findComponentByPos() || findWireByPos()) {
+                    dialog.colorPicker(color => { found.color = color })
+                }
+                break;
+            }
             if(e.ctrlKey) {
                 if(selecting) {
                     clipboard.copy(selecting.components,selecting.wires,selecting);
@@ -99,13 +106,6 @@ c.onkeydown = function(e) {
             var found;
             if(found = findPortByPos()) {
                 dialog.editPort(found);
-            } else if(found = findWireByPos()) {
-                const wire = found;
-                dialog.colorPicker(
-                    color => {
-                        wire.color = color
-                    }
-                )
             } else if(found = findComponentByPos()) {
                 dialog.editComponent(found);
             }
