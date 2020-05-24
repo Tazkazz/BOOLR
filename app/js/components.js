@@ -2857,6 +2857,273 @@ class Display extends Component {
     }
 }
 
+class Display8Bit extends Component {
+    constructor(name,pos,color = "#a00") {
+        super(name,pos,10,4,{ type: "value" });
+        this.addInputPort({ side: 2, pos: 0 }, "Input 0");
+        this.addInputPort({ side: 2, pos: 1 }, "Input 1");
+        this.addInputPort({ side: 2, pos: 2 }, "Input 2");
+        this.addInputPort({ side: 2, pos: 3 }, "Input 3");
+        this.addInputPort({ side: 2, pos: 4 }, "Input 4");
+        this.addInputPort({ side: 2, pos: 5 }, "Input 5");
+        this.addInputPort({ side: 2, pos: 6 }, "Input 6");
+        this.addInputPort({ side: 2, pos: 7 }, "Input 7");
+
+        this.addInputPort({ side: 2, pos: 8 }, "Signed");
+        this.addInputPort({ side: 2, pos: 9 }, "Hexadecimal");
+        this.value = 0;
+
+        this.lineWidth = .12;
+        this.hOffset = this.width / 8;
+
+        this.colorOff = "#300";
+        this.colorOn = "#f00";
+
+        this.digitWidth = 2.43;
+        this.digitHeight = 4;
+
+        this.segments = [
+            [1, 1, 1, 1, 1, 1, 0],
+            [0, 1, 1, 0, 0, 0, 0],
+            [1, 1, 0, 1, 1, 0, 1],
+            [1, 1, 1, 1, 0, 0, 1],
+            [0, 1, 1, 0, 0, 1, 1],
+            [1, 0, 1, 1, 0, 1, 1],
+            [1, 0, 1, 1, 1, 1, 1],
+            [1, 1, 1, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1],
+            [1, 1, 1, 0, 1, 1, 1],
+            [0, 0, 1, 1, 1, 1, 1],
+            // [1, 0, 0, 1, 1, 1, 0], // C
+            [0, 0, 0, 1, 1, 0, 1], // c
+            [0, 1, 1, 1, 1, 0, 1],
+            [1, 0, 0, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 1], // hyphen
+            [0, 0, 0, 0, 0, 0, 0], // space
+        ];
+    }
+
+    function() {}
+
+    parseDigits() {
+        let number = 0;
+        for (let i = 7; i >= 0; i --) {
+            number = (number << 1) + this.input[i].value;
+        }
+        const signed = !!this.input[8].value;
+        const hex = !!this.input[9].value;
+
+        if (signed && number > 127) {
+            number -= 256;
+        }
+
+        const digits = [];
+        if (number < 0) {
+            digits.push(16); // a hyphen ( - )
+            number = Math.abs(number);
+        } else {
+            digits.push(17); // a space (   )
+        }
+
+        if (hex) {
+            digits.push(17);
+            digits.push(number >> 4);
+            digits.push(number % 16);
+        } else {
+            if (number >= 100) {
+                digits.push(Math.floor((number / 100) % 10));
+            } else {
+                digits.push(17);
+            }
+            if (number >= 10) {
+                digits.push(Math.floor((number / 10) % 10));
+            } else {
+                digits.push(17);
+            }
+            digits.push(number % 10);
+        }
+
+        digits.push(number);
+
+        return digits;
+    }
+
+    drawHorizontal(active, sx, sy, sLength, lineWidth) {
+        ctx.fillStyle = active ? this.colorOn : this.colorOff;
+        if(zoom > 20) ctx.shadowBlur = active ? zoom / 2 : 0;
+        ctx.beginPath();
+        ctx.moveTo(sx,sy);
+        ctx.lineTo(sx + sLength,sy);
+        ctx.lineTo(sx + sLength + lineWidth / 2,sy + lineWidth / 2);
+        ctx.lineTo(sx + sLength,sy + lineWidth);
+        ctx.lineTo(sx,sy + lineWidth);
+        ctx.lineTo(sx - lineWidth / 2,sy + lineWidth / 2);
+        ctx.fill();
+    }
+
+    drawVertical(active, sx, sy, sLength, lineWidth) {
+        ctx.fillStyle = active ? this.colorOn : this.colorOff;
+        if(zoom > 20) ctx.shadowBlur = active ? zoom / 2 : 0;
+        ctx.beginPath();
+        ctx.moveTo(sx,sy);
+        ctx.lineTo(sx + lineWidth / 2,sy - lineWidth / 2);
+        ctx.lineTo(sx + lineWidth,sy);
+        ctx.lineTo(sx + lineWidth,sy + sLength);
+        ctx.lineTo(sx + lineWidth / 2,sy + sLength + lineWidth / 2);
+        ctx.lineTo(sx,sy + sLength);
+        ctx.fill();
+    }
+
+    drawDigit(x, y, digit) {
+        if(!(
+            x + this.digitWidth * zoom >= 0 &&
+            x - zoom <= c.width &&
+            y + this.digitHeight * zoom >= 0 &&
+            y - zoom <= c.height
+        )) return;
+
+        const hOffset = this.digitWidth / 8 * zoom;
+        const vOffset = this.digitWidth / 8 / 2 / (this.digitWidth - 1) * this.digitHeight * zoom;
+        const lineWidth = this.lineWidth * this.digitHeight * zoom;
+        const margin = zoom / 20;
+
+        const segments = this.segments[digit] || [];
+
+        // Segment A, top mid
+        let sx = x + hOffset + lineWidth + margin;
+        let sy = y + vOffset;
+        let sLength = this.digitWidth * zoom - 2 * lineWidth - hOffset - margin * 2;
+        this.drawHorizontal(segments[0], sx, sy, sLength, lineWidth);
+
+        // Segment G, mid mid
+        sy = y + (this.digitHeight / 2 * zoom - lineWidth / 2);
+        this.drawHorizontal(segments[6], sx, sy, sLength, lineWidth);
+
+        // Segment D, bottom mid
+        sy = y + (this.digitHeight * zoom - vOffset - lineWidth);
+        this.drawHorizontal(segments[3], sx, sy, sLength, lineWidth);
+
+        // Segment F, top left
+        sx = x + hOffset;
+        sy = y + vOffset + lineWidth + margin;
+        sLength = (this.digitHeight / 2) * zoom - lineWidth * 1.5 - vOffset - margin * 2;
+        this.drawVertical(segments[5], sx, sy, sLength, lineWidth);
+
+        // Segment B, bottom left
+        sx = x + this.digitWidth * zoom - lineWidth;
+        this.drawVertical(segments[1], sx, sy, sLength, lineWidth);
+
+        // Segment E, top right
+        sx = x + hOffset;
+        sy = y + (this.digitHeight / 2) * zoom + lineWidth / 2 + margin;
+        this.drawVertical(segments[4], sx, sy, sLength, lineWidth);
+
+        // Segment C, bottom right
+        sx = x + this.digitWidth * zoom - lineWidth;
+        this.drawVertical(segments[2], sx, sy, sLength, lineWidth);
+    }
+
+    draw() {
+        let x = (this.pos.x - offset.x) * zoom;
+        let y = -(this.pos.y - offset.y) * zoom;
+
+        if(!(
+            x + this.width * zoom + zoom / 2 >= 0 &&
+            x - zoom * 1.5 <= c.width &&
+            y + this.height * zoom + zoom / 2 >= 0 &&
+            y - zoom * 1.5 <= c.height
+        )) return;
+
+        // Draw the frame of the component
+        ctx.fillStyle = this.fillColor || "#111";
+        ctx.strokeStyle = this.strokeColor || "#111";
+        ctx.lineWidth = zoom / 12 | 0;
+        ctx.beginPath();
+        ctx.rect(
+            x - zoom / 2,
+            y - zoom / 2,
+            this.width * zoom,
+            this.height * zoom
+        );
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowColor = this.colorOn;
+
+        x = x - zoom / 2;
+        y = y - zoom / 2;
+
+        // Draw display segments
+
+        const digits = this.parseDigits();
+
+        for (let i = 0; i <= 3; i ++) {
+            this.drawDigit(x + zoom * this.digitWidth * i, y, digits[i]);
+        }
+
+        ctx.shadowBlur = 0;
+
+        x = x + zoom / 2;
+        y = y + zoom / 2;
+
+        // Draw input pins
+        for(let i = 0; i < this.input.length; ++i) {
+            const screen = { x,y };
+            const pos = this.input[i].pos;
+
+            const angle = Math.PI / 2 * pos.side;
+            screen.x += Math.sin(angle) * zoom;
+            screen.y -= Math.cos(angle) * zoom;
+            if(pos.side == 1) screen.x += (this.width - 1) * zoom;
+            else if(pos.side == 2) screen.y += (this.height - 1) * zoom;
+
+            if(pos.side % 2 == 0) screen.x += pos.pos * zoom;
+            else screen.y += pos.pos * zoom;
+
+            ctx.beginPath();
+            ctx.moveTo(
+                screen.x - Math.sin(angle) / 2 * zoom,
+                screen.y + Math.cos(angle) / 2 * zoom
+            );
+            ctx.lineTo(
+                screen.x,
+                screen.y
+            );
+            ctx.lineWidth = zoom / 8;
+            ctx.stroke();
+
+            if(zoom > 10) {
+                ctx.beginPath();
+                ctx.arc(
+                    screen.x,
+                    screen.y,
+                    zoom / 8 - zoom / 20,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.lineWidth = zoom / 10;
+                ctx.fillStyle = "#fff";
+                ctx.stroke();
+                ctx.fill();
+            }
+
+            if(zoom > 30) {
+                const name = this.input[i].name;
+                if(name) {
+                    ctx.fillStyle = "#888";
+                    ctx.font = zoom / 7 + "px Ubuntu";
+                    ctx.fillText(
+                        name,
+                        screen.x - ctx.measureText(name).width / 2,
+                        (pos.side == 2 ? screen.y + zoom / 4 : screen.y - zoom / 4)
+                    );
+                }
+            }
+        }
+    }
+}
+
 // class Merger extends Component {
 //     constructor(name,pos,bits = 8) {
 //         super(name,pos,4,bits,{ type: "icon", text: "call_merge" });
