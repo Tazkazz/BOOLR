@@ -2548,6 +2548,19 @@ class LED extends Component {
     }
 }
 
+class BypassLED extends LED {
+    constructor(name, pos) {
+        super(name, pos);
+
+        this.addOutputPort({ side: 1, pos: 0 });
+    }
+
+    function() {
+        super.function();
+        this.output[0].value = this.input[0].value;
+    }
+}
+
 class Display extends Component {
     constructor(name,pos,color = "#a00") {
         super(name,pos,4,5,{ type: "value" });
